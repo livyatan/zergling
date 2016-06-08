@@ -7,4 +7,13 @@
  /________||_______|| _| `._____| \______| |_______||__| |__| \__|  \______| 
 ```
 
+Usage
+=====
 
+To upvote as `USERID`:
+
+    zergling up -u USERID URL_TO_REDDIT_THING
+
+To downvote as `USERID`:
+
+    zergling down -u USERID URL_TO_REDDIT_THING
