@@ -14,10 +14,13 @@ db = None
 @click.option('--thing', '-t', help='THING_URL')
 @click.option('--userid', '-u', help='USERID')
 def main(action, userid, thing):
-    assert action in ('list', 'up', 'down')
+    assert action in ('list', 'up', 'down', 'clean')
 
     if action == 'list':
         cmd_list()
+
+    if action == 'clean':
+        cmd_clean()
 
     if action in ('up', 'down'):
         assert thing is not None
@@ -27,6 +30,17 @@ def main(action, userid, thing):
 def cmd_list():
     for id_ in db:
         print(id_)
+
+
+def cmd_clean():
+    total_cleaned = 0
+    for id_ in db:
+        zergling = db[id_]
+        print('Validating zergling: {}'.format(id_))
+        reddit = praw.Reddit(user_agent='deadbeefcafebabe')
+        if kill_zergling_if_invalid(reddit, zergling):
+            total_cleaned += 1
+    print('Total zerglings cleaned: {}'.format(total_cleaned))
 
 
 def get_thing(reddit, permalink):
@@ -51,6 +65,21 @@ def get_comment(comments, permalink):
     return None
 
 
+def kill_zergling_if_invalid(reddit, zergling):
+    userid = zergling['username']
+    try:
+        print('Logging in as {}'.format(userid))
+        reddit.login(zergling['username'], zergling['ptpwd'],
+                     disable_warning=True)
+        print('Logging succeeded'.format(userid))
+        return False
+    except praw.errors.InvalidUserPass:
+        print('User {} not valid'.format(userid))
+        del db[userid]
+        print('User {} deleted'.format(userid))
+        return True
+
+
 def cmd_vote(action, userid, thing):
     print('{} vote {} with user {}'.format(action, thing, userid))
     print('Retrieving zergling')
@@ -58,30 +87,23 @@ def cmd_vote(action, userid, thing):
     reddit = praw.Reddit(user_agent='deadbeefcafebabe')
     print(zergling['username'])
     print(zergling['ptpwd'])
-    try:
-        print('Logging in as {}'.format(userid))
-        reddit.login(zergling['username'], zergling['ptpwd'],
-                     disable_warning=True)
-        print('Logging succeeded'.format(userid))
-    except praw.errors.InvalidUserPass:
-        print('User {} not valid'.format(userid))
-        del db[userid]
-        print('User {} deleted'.format(userid))
-    else:
-        t = get_thing(reddit, thing)
 
-        if action == 'up':
-            t.upvote()
-            print('Upvoted')
-            zergling['upvoted'] = zergling.get('upvoted', [])
-            zergling['upvoted'].append(thing)
-        elif action == 'down':
-            t.downvote()
-            print('Downvoted')
-            zergling['downvoted'] = zergling.get('downvoted', [])
-            zergling['downvoted'].append(thing)
+    kill_zergling_if_invalid(reddit, zergling)
 
-        db.save(zergling)
+    t = get_thing(reddit, thing)
+
+    if action == 'up':
+        t.upvote()
+        print('Upvoted')
+        zergling['upvoted'] = zergling.get('upvoted', [])
+        zergling['upvoted'].append(thing)
+    elif action == 'down':
+        t.downvote()
+        print('Downvoted')
+        zergling['downvoted'] = zergling.get('downvoted', [])
+        zergling['downvoted'].append(thing)
+
+    db.save(zergling)
 
 
 if __name__ == '__main__':
