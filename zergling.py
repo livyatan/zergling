@@ -29,6 +29,28 @@ def cmd_list():
         print(id_)
 
 
+def get_thing(reddit, permalink):
+    submission = reddit.get_submission(permalink)
+    if submission.permalink == permalink:
+        print('The permalink is a submission')
+        return submission
+    print('The permalink is a comment. Looking for the comment')
+    return get_comment(submission.comments, permalink)
+
+
+def get_comment(comments, permalink):
+    for comment in comments:
+        if comment.permalink == permalink:
+            return comment
+
+        # Find in replies
+        reply = get_comment(comment.replies, permalink)
+        if reply:
+            return reply
+
+    return None
+
+
 def cmd_vote(action, userid, thing):
     print('{} vote {} with user {}'.format(action, thing, userid))
     print('Retrieving zergling')
@@ -46,26 +68,20 @@ def cmd_vote(action, userid, thing):
         del db[userid]
         print('User {} deleted'.format(userid))
     else:
-        submission = reddit.get_submission(thing)
-        redditor = reddit.get_redditor(userid)
+        t = get_thing(reddit, thing)
 
         if action == 'up':
-            submission.upvote()
+            t.upvote()
             print('Upvoted')
             zergling['upvoted'] = zergling.get('upvoted', [])
             zergling['upvoted'].append(thing)
-            if thing in set([s.permalink for s in redditor.get_liked()]):
-                print('Upvote recorded')
         elif action == 'down':
-            submission.downvote()
+            t.downvote()
             print('Downvoted')
             zergling['downvoted'] = zergling.get('downvoted', [])
             zergling['downvoted'].append(thing)
-            if thing in set([s.permalink for s in redditor.get_disliked()]):
-                print('Downvote recorded')
 
         db.save(zergling)
-        redditor.get_liked
 
 
 if __name__ == '__main__':
