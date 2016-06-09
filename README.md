@@ -12,8 +12,12 @@ Usage
 
 To upvote as `USERID`:
 
-    zergling up -u USERID URL_TO_REDDIT_THING
+    zergling up -u USERID -t PERMALINK
 
 To downvote as `USERID`:
 
-    zergling down -u USERID URL_TO_REDDIT_THING
+    zergling down -u USERID -t PERMALINK
+
+To run in a container:
+
+    docker run --env-file=ENVS kevinjqiu/zergling up -u USERID -t PERMALINK

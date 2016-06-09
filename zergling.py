@@ -4,6 +4,7 @@ import os
 import praw
 import click
 import couchdb
+import uuid
 
 
 db = None
@@ -27,6 +28,10 @@ def main(action, userid, thing):
         cmd_vote(action, userid, thing)
 
 
+def create_reddit_client():
+    return praw.Reddit(user_agent=uuid.uuid4().hex)
+
+
 def cmd_list():
     for id_ in db:
         print(id_)
@@ -37,7 +42,7 @@ def cmd_clean():
     for id_ in db:
         zergling = db[id_]
         print('Validating zergling: {}'.format(id_))
-        reddit = praw.Reddit(user_agent='deadbeefcafebabe')
+        reddit = create_reddit_client()
         if kill_zergling_if_invalid(reddit, zergling):
             total_cleaned += 1
     print('Total zerglings cleaned: {}'.format(total_cleaned))
@@ -84,7 +89,7 @@ def cmd_vote(action, userid, thing):
     print('{} vote {} with user {}'.format(action, thing, userid))
     print('Retrieving zergling')
     zergling = db[userid]
-    reddit = praw.Reddit(user_agent='deadbeefcafebabe')
+    reddit = create_reddit_client()
     print(zergling['username'])
     print(zergling['ptpwd'])
 
