@@ -41,10 +41,16 @@ def cmd_clean():
     total_cleaned = 0
     for id_ in db:
         zergling = db[id_]
+        if zergling.get('validated'):
+            continue
         print('Validating zergling: {}'.format(id_))
         reddit = create_reddit_client()
         if kill_zergling_if_invalid(reddit, zergling):
             total_cleaned += 1
+        else:
+            zergling['validated'] = True
+            db.save(zergling)
+
     print('Total zerglings cleaned: {}'.format(total_cleaned))
 
 
