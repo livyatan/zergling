@@ -83,6 +83,8 @@ def kill_zergling_if_invalid(reddit, zergling):
         del db[userid]
         print('User {} deleted'.format(userid))
         return True
+    except praw.errors.HTTPException as e:
+        print("{}: {}".format(str(e._raw), e._raw.text))
 
 
 def cmd_vote(action, userid, thing):
